@@ -400,12 +400,13 @@ void GodotIK::apply_positions() {
 		if (parent_idx != -1) {
 			trans_parent = transforms[parent_idx];
 		}
+		Transform3D old_trans_bone = trans_parent.affine_inverse() * trans_bone;
 		switch (transform_mode) {
 			case GodotIKEffector::TransformMode::FULL_TRANSFORM: {
 				trans_bone.basis = (trans_skeleton.affine_inverse() * trans_effector).basis;
 				Transform3D local_trans_bone = trans_parent.affine_inverse() * trans_bone;
 
-				skeleton->set_bone_pose(bone_idx, local_trans_bone);
+				skeleton->set_bone_pose(bone_idx, old_trans_bone.interpolate_with(local_trans_bone, effector->get_influence()));
 				break;
 			}
 			case GodotIKEffector::TransformMode::STRAIGHTEN_CHAIN: {
@@ -416,7 +417,7 @@ void GodotIK::apply_positions() {
 				Vector3 prev_basis_scale = local_trans_bone.basis.get_scale();
 				local_trans_bone.basis = Basis().scaled(prev_basis_scale);
 
-				skeleton->set_bone_pose(bone_idx, local_trans_bone);
+				skeleton->set_bone_pose(bone_idx, old_trans_bone.interpolate_with(local_trans_bone, effector->get_influence()));
 				break;
 			}
 			case GodotIKEffector::TransformMode::PRESERVE_ROTATION: {
@@ -429,7 +430,7 @@ void GodotIK::apply_positions() {
 
 				Transform3D local_trans_bone = trans_parent.affine_inverse() * trans_bone;
 				local_trans_bone.basis = init_local_trans_bone.basis;
-				skeleton->set_bone_pose(bone_idx, local_trans_bone);
+				skeleton->set_bone_pose(bone_idx, old_trans_bone.interpolate_with(local_trans_bone, effector->get_influence()));
 				break;
 			}
 			default: {
